@@ -80,11 +80,19 @@ class MusicCommands(commands.Cog):
             return None
 
         vc = ctx.guild.voice_client
+        if vc and not vc.is_connected():
+            logger.info(f"Conexión previa de voz en {ctx.guild.name} no está activa. Limpiando...")
+            try:
+                await vc.disconnect(force=True)
+            except Exception:
+                pass
+            vc = None
+
         if vc:
             if vc.channel != channel:
                 await vc.move_to(channel)
         else:
-            vc = await channel.connect()
+            vc = await channel.connect(reconnect=True, timeout=20.0)
 
         return vc
 
@@ -112,6 +120,14 @@ class MusicCommands(commands.Cog):
 
         try:
             result = await self.extractor.extract_song(query, requester=ctx.author)
+
+            # Asegurar que la conexión de voz sigue activa tras la búsqueda/extracción
+            if not player.voice_client or not player.voice_client.is_connected():
+                logger.warning(f"Conexión de voz perdida durante extracción en {ctx.guild.name}. Reconectando...")
+                vc = await self._ensure_voice_connection(ctx)
+                if not vc or not vc.is_connected():
+                    await loading_msg.edit(content="❌ Se perdió la conexión con el canal de voz.")
+                    return
 
             if isinstance(result, list):
                 # Playlist
@@ -253,7 +269,7 @@ class MusicCommands(commands.Cog):
         await player.stop()
         await ctx.send("⏹️ Reproducción detenida, cola limpiada y bot desconectado.")
 
-    @commands.command(name="help_mm", aliases=["mhelp", "ayuda"])
+    @commands.command(name="help", aliases=["help_mm", "mmhelp", "mhelp", "ayuda", "comandos"])
     async def help_command(self, ctx: commands.Context):
         """Muestra la lista de comandos disponibles."""
         embed = discord.Embed(
@@ -269,5 +285,6 @@ class MusicCommands(commands.Cog):
         embed.add_field(name="`mmqueue`", value="Muestra la lista de canciones en la cola.", inline=True)
         embed.add_field(name="`mmnowplaying` / `mmnp`", value="Muestra la canción actual con botones de control.", inline=True)
         embed.add_field(name="`mmstop` / `mmleave`", value="Detiene la música y desconecta al bot.", inline=True)
+        embed.add_field(name="`mmhelp` / `mmayuda`", value="Muestra la lista de comandos disponibles.", inline=True)
         embed.set_footer(text="momoDj • Desconexión automática a los 30s sin participantes.")
         await ctx.send(embed=embed)

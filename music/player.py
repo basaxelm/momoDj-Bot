@@ -43,6 +43,8 @@ class GuildMusicPlayer:
         vc = self.voice_client
         if not vc or not vc.is_connected():
             logger.warning(f"Attempted to play song in {self.guild.name} but not connected to voice.")
+            if self.text_channel:
+                await self.text_channel.send(f"⚠️ No estoy conectado al canal de voz para reproducir **{song.title}**.")
             return
 
         async with self._lock:
@@ -70,12 +72,14 @@ class GuildMusicPlayer:
         if error:
             logger.error(f"Playback error in guild '{self.guild.name}': {error}")
         
-        # Schedule the coroutine to advance the queue
+        # Schedule the coroutine to advance the queue asynchronously without blocking the audio worker thread
         fut = asyncio.run_coroutine_threadsafe(self.play_next(), self.bot.loop)
-        try:
-            fut.result()
-        except Exception as e:
-            logger.error(f"Error advancing queue in _after_playback: {e}")
+        def _check_result(f):
+            try:
+                f.result()
+            except Exception as e:
+                logger.error(f"Error advancing queue in _after_playback: {e}")
+        fut.add_done_callback(_check_result)
 
     async def play_next(self) -> Optional[Song]:
         """Advances to the next song in the queue and plays it."""

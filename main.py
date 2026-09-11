@@ -65,7 +65,7 @@ async def on_command_error(ctx: commands.Context, error: Exception):
     if isinstance(error, commands.CommandNotFound):
         return  # Ignore unknown commands to avoid chat spam
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f"⚠️ Parámetro faltante: `{error.param.name}`. Usa `{COMMAND_PREFIX}help_mm` para ver el uso.")
+        await ctx.send(f"⚠️ Parámetro faltante: `{error.param.name}`. Usa `{COMMAND_PREFIX}help` para ver el uso.")
     elif isinstance(error, commands.CommandInvokeError):
         logger.error(f"Error invocando comando '{ctx.command}': {error.original}", exc_info=True)
         await ctx.send(f"❌ Ocurrió un error al ejecutar el comando: {error.original}")

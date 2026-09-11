@@ -55,6 +55,9 @@ def ensure_opus():
     import discord.opus
     if not discord.opus.is_loaded():
         candidates = [
+            str(BASE_DIR / "libopus-0.dll"),
+            str(BASE_DIR / "opus.dll"),
+            str(BASE_DIR / "config" / "libopus-0.dll"),
             "libopus-0.dll",
             "opus.dll",
             r"C:\msys64\ucrt64\bin\libopus-0.dll",

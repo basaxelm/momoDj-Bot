@@ -43,27 +43,15 @@ Todos los comandos pueden ejecutarse pegados al prefijo (ej: `mmplay`) o con un 
 
 ---
 
-## 🛠️ Historial de Correcciones Técnicas (Voice Gateway Fixes)
+## 🛠️ Últimas Mejoras y Correcciones (v2.1.0)
 
-Esta sección documenta los errores críticos de conexión de voz resueltos en el bot para referencia y estabilidad:
+- **Soporte completo para Voice Gateway v8 y Cifrado DAVE (E2EE)**: Actualización a `discord.py 2.7.1` con la librería `davey` para resolver los errores de conexión de voz `4006` y `4017` introducidos por los nuevos requisitos de Discord.
+- **Estandarización en CPython 3.13 de Windows**: Garantiza la instalación directa de ruedas binarias precompiladas de 64 bits sin necesidad de compilar paquetes locales.
+- **Empaquetado autónomo de `libopus-0.dll`**: Provee soporte inmediato para codificación Opus en Windows sin requerir librerías externas.
+- **Nuevo comando `mmhelp`**: Menú de ayuda interactivo para consultar la lista de comandos disponibles (`mmhelp` o `mm help`).
+- **Mayor robustez en reproducción**: Limpieza preventiva de conexiones de voz zombi y progreso asíncrono no bloqueante en la cola.
 
-### 1. Error `WebSocket closed with 4006` (Session is no longer valid)
-- **Causa raíz**: Discord dio de baja la versión 4 de su Voice Gateway (`/?v=4`) y modificó el formato de sus servidores de medios (`*.discord.media:port`). Las versiones anteriores de `discord.py` (< 2.6.0) utilizaban el gateway antiguo y recortaban erróneamente los puertos con `rpartition(':')`, provocando que el servidor de voz rechazara la conexión inmediatamente.
-- **Solución**: Migración a **Voice Gateway v8**, adoptado oficialmente en `discord.py` 2.6+.
-
-### 2. Error `WebSocket closed with 4017` (`DAVE_PROTOCOL_REQUIRED`)
-- **Causa raíz**: Discord implementó de forma estricta y obligatoria el protocolo **DAVE** (*Discord Audio & Video End-to-End Encryption*, basado en MLS RFC 9420) en sus canales de voz. Al intentar conectar con librerías que no anuncian `max_dave_protocol_version > 0` en el payload de `IDENTIFY`, el servidor de Discord cierra la conexión de forma abrupta con código 4017.
-- **Solución**:
-  - Actualización a **`discord.py[voice]==2.7.1`**, que incluye compatibilidad nativa con DAVE.
-  - Integración de la biblioteca binaria **`davey`** (`davey>=0.1.0`), encargada de generar los paquetes de claves MLS y cifrar los paquetes de audio Opus al vuelo.
-
-### 3. Incompatibilidad de Entornos MinGW/MSYS2 vs Windows CPython
-- **Causa raíz**: Entornos basados en MinGW/MSYS2 (`mingw_x86_64_ucrt_gnu`) no reconocen las ruedas binarias precompiladas para Windows (`win_amd64`) de `davey`. Como consecuencia, `pip` intentaba compilar `davey` desde código fuente utilizando Rust/Maturin, fallando por requerir características experimentales (`edition2024`).
-- **Solución**: Estandarización obligatoria en **CPython 3.13 oficial de Windows**, el cual instala paquetes 100% precompilados sin requerir cadenas de compilación C++/Rust locales.
-
-### 4. Empaquetado Autónomo de `libopus-0.dll` y Limpieza de Sockets
-- Se incorporó la librería **`libopus-0.dll`** directamente en la raíz del proyecto para que cualquier máquina Windows cuente con soporte Opus inmediato sin necesidad de instalar librerías adicionales en el sistema operativo.
-- Se implementó limpieza forzosa de conexiones en estado zombi en `_ensure_voice_connection` y se desacopló el callback `_after_playback` de la cola mediante `fut.add_done_callback` para evitar congelamientos en el hilo de audio de Discord.
+> 📖 Para el análisis técnico exhaustivo de cada corrección y diagnóstico de errores de voz, consultá el [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

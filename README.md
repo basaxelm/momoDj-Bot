@@ -82,33 +82,40 @@ momoDj-Bot/
 
 ---
 
-## 🖥️ Guía de Despliegue en Otra Máquina Windows (PC de Escritorio)
+## 🚀 Guía de Instalación y Despliegue
 
-Si tenés el bot funcionando en tu notebook y querés trasladarlo a una PC de escritorio más potente para dejarlo corriendo, seguí estos pasos para realizar un despliegue limpio y óptimo.
+Esta sección explica paso a paso cómo poner en funcionamiento el bot, ya sea de forma local en tu computadora personal (Windows) o en un servidor en la nube (Linux VPS) para mantenerlo activo 24/7.
 
-### 1. Programas a Descargar e Instalar en la PC de Escritorio
+---
 
-Abrí una ventana de **PowerShell como Administrador** en tu PC de escritorio e instalá los requisitos con una sola línea mediante `winget`:
+### 💻 Opción 1: Instalación Local en Windows (Tu Computadora)
+
+Esta opción es ideal para ejecutar el bot directamente en tu PC cada vez que quieras escuchar música con amigos.
+
+#### 1. Requisitos Previos e Instalación Rápida
+Podés instalar todos los programas necesarios ejecutando una sola línea en **PowerShell como Administrador** con `winget`:
 
 ```powershell
 winget install Python.Python.3.13 Gyan.FFmpeg OpenJS.NodeJS Git.Git --accept-package-agreements --accept-source-agreements
 ```
 
-Si preferís instalarlos manualmente desde sus páginas oficiales:
+O si preferís descargarlos manualmente desde sus sitios oficiales:
 1. **Python 3.13** ([python.org/downloads](https://www.python.org/downloads/)):
-   - ⚠️ **MUY IMPORTANTE**: En la primera pantalla del instalador, marcá la casilla **"Add python.exe to PATH"**.
+   - ⚠️ **CRUCIAL**: En la primera pantalla del instalador, marcá la casilla **"Add python.exe to PATH"**.
 2. **FFmpeg** ([gyan.dev/ffmpeg](https://www.gyan.dev/ffmpeg/builds/)):
-   - Descargá la versión *release essentials*, descomprimila y asegurate de que la carpeta `bin` esté en tus variables de entorno PATH, o configurala en el `.env`.
+   - Motor de audio. Asegurate de que la carpeta `bin` de FFmpeg esté agregada a tu PATH o configurada en tu `.env`.
 3. **Node.js** ([nodejs.org](https://nodejs.org/)):
-   - Versión LTS recomendada. Necesario para que `yt-dlp` procese los tokens dinámicos de YouTube.
+   - Versión LTS. Necesario para que `yt-dlp` procese las firmas y tokens dinámicos de YouTube.
 4. **Git** ([git-scm.com](https://git-scm.com/)):
-   - Para clonar y actualizar el repositorio cómodamente.
+   - Para clonar el código y mantenerlo actualizado.
+
+> ℹ️ **Librería Opus**: El archivo nativo `libopus-0.dll` ya viene incluido en la raíz de este proyecto, por lo que no es necesario instalar paquetes adicionales de audio en Windows.
 
 ---
 
-### 2. Clonado y Configuración del Proyecto
+#### 2. Descarga y Creación del Entorno Virtual
 
-En tu PC de escritorio, abrí PowerShell en la carpeta donde quieras ubicar el bot (por ejemplo `C:\projects`):
+Abrí una terminal de PowerShell en la carpeta donde desees ubicar el bot (por ejemplo, `C:\projects`):
 
 ```powershell
 # 1. Clonar el repositorio
@@ -118,117 +125,116 @@ cd momoDj-Bot
 # 2. Crear el entorno virtual con Python 3.13 oficial
 py -3.13 -m venv venv
 
-# 3. Actualizar pip e instalar dependencias con soporte DAVE
+# 3. Actualizar pip e instalar las dependencias
 .\venv\Scripts\python.exe -m pip install --upgrade pip
 .\venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-> [!WARNING]
-> **¿Qué NO copiar de la notebook a la PC?**
-> **NUNCA copies la carpeta `venv/`** directamente entre máquinas. Los entornos virtuales contienen rutas absolutas y punteros a los binarios de la máquina de origen. Creá siempre el entorno virtual desde cero en la máquina de destino siguiendo los comandos anteriores.
+> [!IMPORTANT]
+> **Aviso sobre el entorno virtual (`venv/`)**:
+> NUNCA muevas ni copies la carpeta `venv/` entre diferentes computadoras. Los entornos virtuales contienen rutas absolutas y enlaces simbólicos específicos del sistema donde fueron creados. Creá siempre el entorno desde cero en cada máquina siguiendo los comandos de arriba.
 
 ---
 
-### 3. Configuración de Credenciales (`.env` y `cookies.txt`)
+#### 3. Configuración de Credenciales (`.env` y `cookies.txt`)
 
-Copiá los siguientes archivos desde tu notebook hacia la carpeta del bot en tu PC de escritorio:
-
-1. **`.env`**:
-   Crealo en la raíz del proyecto con tu token de Discord:
+1. **Crear archivo `.env`**:
+   Creá un archivo llamado `.env` en la raíz del proyecto (podés copiar `.env.example` como referencia):
    ```ini
    DISCORD_TOKEN=tu_token_de_discord_aqui
    COMMAND_PREFIX=mm
    ```
-2. **`config/cookies.txt`** *(Opcional pero muy recomendado)*:
-   Copiá tu archivo `cookies.txt` a la carpeta `config/` para mantener el acceso autenticado a YouTube y evitar restricciones de IP o captchas.
+2. **Cookies de YouTube (`config/cookies.txt`)** *(Opcional pero recomendado)*:
+   Para evitar bloqueos de IP o restricciones de edad por parte de YouTube:
+   - Utilizá una extensión de navegador como **Get cookies.txt LOCALLY**.
+   - Iniciá sesión en YouTube y exportá las cookies en formato Netscape.
+   - Guardá el archivo como `config/cookies.txt`.
 
 ---
 
-### 4. Puesta en Marcha
+#### 4. Puesta en Marcha
 
-Podés iniciar el bot inmediatamente con:
-- Doble clic sobre el archivo **`run_bot.bat`**.
-- O desde PowerShell:
+Podés iniciar el bot inmediatamente mediante cualquiera de estas opciones:
+- **Doble clic**: Ejecutá el archivo **`run_bot.bat`**.
+- **Desde la consola**:
   ```powershell
   .\run_bot.bat
   ```
 
 ---
 
-### 5. Formas Más Óptimas de Ejecución en PC de Escritorio
+#### 5. Opciones Avanzadas de Ejecución Continua en Windows
 
-En una PC de escritorio no siempre querés tener una ventana negra de consola abierta en tu barra de tareas todo el tiempo. Existen dos métodos profesionales para optimizar la ejecución:
+Si querés que el bot funcione de manera ininterrumpida sin tener una ventana de terminal abierta en tu barra de tareas:
 
-#### Opción A: Ejecutar como Servicio de Windows con NSSM (Recomendado 🌟)
-Con **NSSM** (*Non-Sucking Service Manager*), el bot se convierte en un servicio real de Windows: arranca silenciosamente en segundo plano cuando encendés la PC (incluso sin iniciar sesión) y se reinicia solo si ocurre algún error inesperado.
+- **Opción A (Recomendada): Como Servicio de Windows con NSSM** 🌟  
+  El bot arrancará automáticamente al encender la PC (incluso sin haber iniciado sesión en Windows) y se autoreiniciará si ocurre algún error inesperado:
+  ```powershell
+  # 1. Instalar NSSM
+  winget install NSSM.NSSM
 
-1. Instalá NSSM mediante winget:
-   ```powershell
-   winget install NSSM.NSSM
-   ```
-2. Creá el servicio:
-   ```powershell
-   nssm install momoDj "C:\projects\momoDj-Bot\venv\Scripts\python.exe" "C:\projects\momoDj-Bot\main.py"
-   nssm set momoDj AppDirectory "C:\projects\momoDj-Bot"
-   nssm set momoDj Start SERVICE_AUTO_START
-   ```
-3. Iniciá el servicio:
-   ```powershell
-   nssm start momoDj
-   ```
-*(Podés detenerlo o desinstalarlo en cualquier momento con `nssm stop momoDj` o `nssm remove momoDj confirm`).*
+  # 2. Configurar el servicio (ajustá la ruta según tu instalación)
+  nssm install momoDj "C:\projects\momoDj-Bot\venv\Scripts\python.exe" "C:\projects\momoDj-Bot\main.py"
+  nssm set momoDj AppDirectory "C:\projects\momoDj-Bot"
+  nssm set momoDj Start SERVICE_AUTO_START
 
-#### Opción B: Inicio Automático con el Programador de Tareas (Sin consola)
-Si preferís no instalar programas extra:
-1. Presioná `Win + R`, escribí `taskschd.msc` y presioná Enter.
-2. Hacé clic en **Crear tarea básica**.
-3. Nombre: `momoDj Discord Bot`.
-4. Desencadenador: **Al iniciar sesión**.
-5. Acción: **Iniciar un programa**.
-   - **Programa o script**: `C:\projects\momoDj-Bot\venv\Scripts\pythonw.exe` *(la 'w' ejecuta en segundo plano sin ventana)*.
-   - **Argumentos**: `main.py`
-   - **Iniciar en**: `C:\projects\momoDj-Bot`
-6. Finalizá la configuración. El bot arrancará automáticamente cada vez que inicies sesión en tu PC.
+  # 3. Iniciar el servicio
+  nssm start momoDj
+  ```
+  *(Podés detenerlo o desinstalarlo en cualquier momento con `nssm stop momoDj` o `nssm remove momoDj confirm`).*
+
+- **Opción B: Inicio Silencioso con el Programador de Tareas (Task Scheduler)**  
+  Si no deseás instalar programas adicionales:
+  1. Presioná `Win + R`, escribí `taskschd.msc` y presioná Enter.
+  2. Seleccioná **Crear tarea básica** y llamala `momoDj Discord Bot`.
+  3. Desencadenador: **Al iniciar sesión**.
+  4. Acción: **Iniciar un programa**.
+     - **Programa o script**: `C:\projects\momoDj-Bot\venv\Scripts\pythonw.exe` *(el ejecutable `pythonw.exe` corre en segundo plano sin ventana gráfica)*.
+     - **Argumentos**: `main.py`
+     - **Iniciar en**: `C:\projects\momoDj-Bot`
+  5. Guardá los cambios. El bot se iniciará automáticamente cada vez que inicies sesión.
 
 ---
 
-## ☁️ Despliegue en Servidor (VPS Linux / Ubuntu)
+### ☁️ Opción 2: Despliegue en Servidor (VPS Linux / Ubuntu 24/7)
 
-Para mantener el servicio activo 24/7 en un servidor en la nube:
+Si contás con un servidor en la nube (como Ubuntu o Debian) y preferís que el bot funcione las 24 horas del día sin depender de tener tu computadora encendida:
 
-### 1. Instalación de Dependencias del Sistema
+#### 1. Instalación de Dependencias del Sistema
+Conectate por SSH a tu servidor y ejecutá:
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y python3 python3-venv python3-pip ffmpeg nodejs git
 ```
 
-### 2. Clonado y Configuración del Entorno Virtual
+#### 2. Clonado y Configuración del Entorno Virtual
 ```bash
 git clone https://github.com/basaxelm/momoDj-Bot.git
 cd momoDj-Bot
 python3 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 3. Archivo de Configuración
-Creá el archivo `.env`:
+#### 3. Configuración del Archivo `.env`
 ```bash
 nano .env
 ```
-Ingresá tu token:
+Ingresá tus credenciales:
 ```ini
 DISCORD_TOKEN=tu_token_de_discord_aqui
 COMMAND_PREFIX=mm
 ```
+*(Guardá con `Ctrl + O`, presioná `Enter` y salí con `Ctrl + X`).*
 
-### 4. Servicio del Sistema (`systemd`)
-Creá la unidad de servicio:
+#### 4. Configuración como Servicio del Sistema (`systemd`)
+Para que el bot inicie automáticamente con el servidor y se reinicie ante caídas:
 ```bash
 sudo nano /etc/systemd/system/momodj.service
 ```
 
-Configuración sugerida:
+Ingresá la siguiente plantilla (reemplazá `ubuntu` por tu usuario y ajustá la ruta si difiere):
 ```ini
 [Unit]
 Description=momoDj - Bot de Música para Discord
@@ -253,7 +259,12 @@ sudo systemctl enable momodj
 sudo systemctl start momodj
 ```
 
-Monitoreo de logs en vivo:
-```bash
-sudo journalctl -u momodj -f
-```
+#### 5. Monitoreo y Verificación
+- **Verificar estado del servicio**:
+  ```bash
+  sudo systemctl status momodj
+  ```
+- **Monitorear logs en tiempo real**:
+  ```bash
+  sudo journalctl -u momodj -f
+  ```

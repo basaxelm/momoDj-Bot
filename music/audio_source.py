@@ -1,8 +1,7 @@
 import asyncio
-import json
-import logging
-import urllib.request
-from typing import List, Optional, Tuple, Union
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import List, Optional, Union
 import discord
 import yt_dlp
 
@@ -24,7 +23,7 @@ YTDL_BASE_OPTIONS = {
     'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
-    'ignoreerrors': False,
+    'ignoreerrors': True,
     'logtostderr': False,
     'quiet': True,
     'no_warnings': True,
@@ -39,9 +38,20 @@ if YOUTUBE_COOKIES_PATH:
     logger.info(f"Using YouTube cookies from: {YOUTUBE_COOKIES_PATH}")
 
 
+@dataclass
+class PlaylistResult:
+    songs: List[Song]
+    skipped_count: int
+
+
 class AudioSourceExtractor:
-    def __init__(self):
-        self.ytdl = yt_dlp.YoutubeDL(YTDL_BASE_OPTIONS)
+    @staticmethod
+    def _extract_info(search_term: str):
+        # Each request owns its extractor and options, including concurrent requests.
+        options = deepcopy(YTDL_BASE_OPTIONS)
+        options['logger'] = logger
+        with yt_dlp.YoutubeDL(options) as ytdl:
+            return ytdl.extract_info(search_term, download=False)
 
     @classmethod
     def create_ffmpeg_source(cls, stream_url: str) -> discord.AudioSource:
@@ -70,7 +80,7 @@ class AudioSourceExtractor:
             logger.warning(f"Error resolving Spotify oEmbed for {url}: {e}")
             return None
 
-    async def extract_song(self, query: str, requester: Optional[discord.Member] = None) -> Union[Song, List[Song]]:
+    async def extract_song(self, query: str, requester: Optional[discord.Member] = None) -> Union[Song, PlaylistResult]:
         """
         Extracts song metadata and stream URL from a search query or link.
         Supports YouTube URLs, text searches, and Spotify URLs via metadata resolution.
@@ -94,26 +104,28 @@ class AudioSourceExtractor:
         loop = asyncio.get_running_loop()
         data = await loop.run_in_executor(
             None,
-            lambda: self.ytdl.extract_info(search_term, download=False)
+            lambda: self._extract_info(search_term)
         )
 
         if not data:
-            raise ValueError("No se encontraron resultados para la búsqueda.")
+            raise ValueError("No se pudo obtener audio de la solicitud. El enlace puede no estar disponible o la búsqueda no tener resultados.")
 
         # Handle search results / playlists
         if 'entries' in data:
-            entries = [entry for entry in data['entries'] if entry is not None]
-            if not entries:
-                raise ValueError("No se encontraron canciones válidas.")
+            entries = list(data['entries'] or [])
             
             # If it was a search, return only the top result
             if search_term.startswith("ytsearch:"):
-                entry = entries[0]
+                valid_entries = [entry for entry in entries if entry and entry.get('url')]
+                if not valid_entries:
+                    raise ValueError("No se encontraron canciones válidas para la búsqueda.")
+                entry = valid_entries[0]
             else:
                 # Actual playlist
                 songs = []
+                skipped_count = 0
                 for entry in entries:
-                    stream_url = entry.get('url')
+                    stream_url = entry.get('url') if entry else None
                     if stream_url:
                         songs.append(Song(
                             title=entry.get('title', 'Canción sin título'),
@@ -124,7 +136,16 @@ class AudioSourceExtractor:
                             requester=requester,
                             is_live=entry.get('is_live', False)
                         ))
-                return songs
+                    else:
+                        skipped_count += 1
+                        logger.warning(
+                            "Omitiendo entrada de playlist sin audio: %s",
+                            (entry.get('webpage_url') or entry.get('id') or entry.get('title'))
+                            if entry else 'extracción fallida (ver error de yt-dlp)',
+                        )
+                if not songs:
+                    raise ValueError("La playlist no contiene canciones disponibles para reproducir.")
+                return PlaylistResult(songs=songs, skipped_count=skipped_count)
         else:
             entry = data
 

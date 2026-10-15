@@ -4,6 +4,13 @@ Todos los cambios notables, mejoras arquitectónicas y correcciones de errores e
 
 ---
 
+## [Sin publicar]
+
+### Correcciones de playlists
+- Las playlists con videos no disponibles agregan las canciones válidas en su orden original y descartan las entradas fallidas o sin audio.
+- El mensaje de confirmación informa las canciones agregadas y las entradas descartadas que devolvió yt-dlp. Si ninguna es válida, se muestra un error sin agregar una playlist vacía.
+- Cada solicitud utiliza su propia instancia de yt-dlp; los errores de extracción quedan registrados en los logs del bot.
+
 ## [2.1.0] - 2026-09-10
 
 ### 🚀 Novedades y Comandos

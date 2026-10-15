@@ -3,7 +3,7 @@ from discord.ext import commands
 from typing import Dict, Optional
 
 from config.settings import logger
-from music.audio_source import AudioSourceExtractor
+from music.audio_source import AudioSourceExtractor, PlaylistResult
 from music.player import GuildMusicPlayer
 from music.song import Song
 
@@ -129,12 +129,15 @@ class MusicCommands(commands.Cog):
                     await loading_msg.edit(content="❌ Se perdió la conexión con el canal de voz.")
                     return
 
-            if isinstance(result, list):
+            if isinstance(result, PlaylistResult):
                 # Playlist
-                player.queue.add_multiple(result)
+                player.queue.add_multiple(result.songs)
+                description = f"Se agregaron **{len(result.songs)}** canciones a la cola."
+                if result.skipped_count:
+                    description += f"\n⚠️ Se omitieron **{result.skipped_count}** entradas que no se pudieron reproducir."
                 embed = discord.Embed(
                     title="🎶 Lista de reproducción añadida",
-                    description=f"Se agregaron **{len(result)}** canciones a la cola.",
+                    description=description,
                     color=discord.Color.green()
                 )
                 await loading_msg.edit(content=None, embed=embed)
